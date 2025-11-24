@@ -1154,9 +1154,9 @@ commit_and_push(){
 			fi
 		done < <(find system -maxdepth 1 -type d -not -path "system" -print0 2>/dev/null | sort -z)
 		
-		# Calculate how many subdirs per part (divide into 3 parts)
+		# Calculate how many subdirs per part (ceiling division to split into 3 parts)
 		local total=${#SYSTEM_SUBDIRS[@]}
-		local part_size=$(( (total + 2) / 3 ))  # Round up division
+		local part_size=$(( (total + 2) / 3 ))  # Ceiling division by 3: (n+2)/3
 		
 		# Push system subdirectories in three parts
 		for part in 1 2 3; do
@@ -1175,14 +1175,23 @@ commit_and_push(){
 			
 			# Also handle root-level files in system for the first part
 			if [ $part -eq 1 ]; then
-				find system -maxdepth 1 -type f -exec git add {} \; 2>/dev/null
-				has_content=true
+				# Check if any files were found and added
+				if find system -maxdepth 1 -type f -exec git add {} \; 2>/dev/null | grep -q .; then
+					has_content=true
+				elif [ -n "$(find system -maxdepth 1 -type f 2>/dev/null)" ]; then
+					has_content=true
+				fi
 			fi
 			
 			# Commit and push this part if there's content
 			if [ "$has_content" = true ]; then
-				git commit -sm "Add system part ${part}/3 for ${description}" || true
-				git push -u origin "${branch}"
+				# Only commit if there are staged changes
+				if git diff --cached --quiet; then
+					printf "No changes to commit for system part %s/3\n" "${part}"
+				else
+					git commit -sm "Add system part ${part}/3 for ${description}"
+					git push -u origin "${branch}"
+				fi
 			fi
 		done
 	fi
