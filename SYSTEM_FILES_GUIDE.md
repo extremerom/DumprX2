@@ -60,7 +60,7 @@ Este script:
 Divide los archivos del sistema en **5 partes**:
 
 #### Parte 1: Archivos SPV (Commit Separado)
-Los archivos `.spv` son binarios de shaders y deben ir en un commit aparte:
+Los archivos `.spv` son binarios de shaders y deben ir en un commit aparte (no cuenta como parte de las 5 divisiones del sistema):
 
 ```bash
 # Opción 1: Usando find (más portable)
@@ -75,7 +75,7 @@ git commit -m "Add SPV shader binary files"
 git push origin <branch-name>
 ```
 
-#### Parte 2: Archivos de Configuración XML/CONF/TXT
+#### Parte 1 de 5: Archivos de Configuración XML/CONF/TXT
 ```bash
 # Opción 1: Usando find (más portable)
 find system -path "*/etc/*" \( -name "*.xml" -o -name "*.conf" -o -name "*.txt" \) -type f -exec git add {} +
@@ -91,7 +91,7 @@ git commit -m "Add system configuration files (Part 1/5)"
 git push origin <branch-name>
 ```
 
-#### Parte 3: Certificados
+#### Parte 2 de 5: Certificados
 ```bash
 # Usando rutas específicas
 git add system/system/etc/epdg/certificates/ 2>/dev/null || git add system/etc/epdg/certificates/
@@ -99,7 +99,7 @@ git commit -m "Add certificate files (Part 2/5)"
 git push origin <branch-name>
 ```
 
-#### Parte 4: Archivos Init y Servicios
+#### Parte 3 de 5: Archivos Init y Servicios
 ```bash
 # Usando rutas específicas
 git add system/system/etc/init/ 2>/dev/null || git add system/etc/init/
@@ -107,7 +107,7 @@ git commit -m "Add init and service files (Part 3/5)"
 git push origin <branch-name>
 ```
 
-#### Parte 5: Configuración de Fuentes y Display
+#### Parte 4 de 5: Configuración de Fuentes y Display
 ```bash
 # Opción 1: Usando find
 find system \( -path "*/etc/font*" -o -path "*/etc/display*" \) -type f -exec git add {} +
@@ -122,7 +122,7 @@ git commit -m "Add font and display configuration (Part 4/5)"
 git push origin <branch-name>
 ```
 
-#### Parte 5: Archivos Restantes
+#### Parte 5 de 5: Archivos Restantes
 ```bash
 git add system/
 git commit -m "Add remaining system files (Part 5/5)"
