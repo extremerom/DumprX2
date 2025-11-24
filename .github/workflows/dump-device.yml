@@ -14,7 +14,6 @@ on:
       github_token:
         description: 'Token de GitHub con permisos de escritura'
         required: true
-        type: string
 
 jobs:
   dump:
@@ -46,7 +45,9 @@ jobs:
       
       - name: Setup GitHub token
         run: |
-          echo "${{ inputs.github_token }}" > .github_token
+          echo "${GITHUB_TOKEN}" > .github_token
+        env:
+          GITHUB_TOKEN: ${{ inputs.github_token }}
       
       - name: Extract organization name from repo URL
         id: extract_org
@@ -67,8 +68,9 @@ jobs:
       - name: Run dumper script
         run: |
           chmod +x dumper.sh
-          ./dumper.sh '${{ inputs.dump_url }}'
+          ./dumper.sh "${DUMP_URL}"
         env:
+          DUMP_URL: ${{ inputs.dump_url }}
           GITHUB_TOKEN: ${{ inputs.github_token }}
       
       - name: Upload dump artifacts (if not pushed to GitHub)
