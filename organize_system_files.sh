@@ -6,6 +6,9 @@
 
 set -euo pipefail
 
+# Enable globstar for ** patterns
+shopt -s globstar nullglob
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYSTEM_DIR="${1:-system}"
 
@@ -49,9 +52,9 @@ TOTAL_FILES=$(find "$SYSTEM_DIR" -type f | wc -l)
 echo "Total files found: $TOTAL_FILES"
 
 # Count and analyze .spv files specifically
-SPV_COUNT=$(find "$SYSTEM_DIR" -name "*.spv" -type f | wc -l)
+SPV_COUNT=$(find "$SYSTEM_DIR" -name "*.spv" -type f 2>/dev/null | wc -l)
 if [ "$SPV_COUNT" -gt 0 ]; then
-    SPV_SIZE=$(find "$SYSTEM_DIR" -name "*.spv" -type f -exec du -ch {} + | grep total$ | awk '{print $1}')
+    SPV_SIZE=$(find "$SYSTEM_DIR" -name "*.spv" -type f -exec du -ch {} + 2>/dev/null | grep total$ | awk '{print $1}')
     echo "SPV files found: $SPV_COUNT (total size: $SPV_SIZE)"
 fi
 

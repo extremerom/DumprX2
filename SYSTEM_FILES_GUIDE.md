@@ -24,7 +24,7 @@ Este repositorio incluye herramientas para manejar este problema:
 
 ### 1. Configuración de Git LFS
 
-Los archivos `.gitattributes` ya está configurado para rastrear automáticamente archivos binarios grandes con Git LFS:
+El archivo `.gitattributes` ya está configurado para rastrear automáticamente archivos binarios grandes con Git LFS:
 
 - `*.spv` - Archivos binarios de shaders (imagefilter program binary)
 - `*.img` - Imágenes de particiones
@@ -63,6 +63,13 @@ Divide los archivos del sistema en **5 partes**:
 Los archivos `.spv` son binarios de shaders y deben ir en un commit aparte:
 
 ```bash
+# Opción 1: Usando find (más portable)
+find system -name "*.spv" -type f -exec git add {} +
+git commit -m "Add SPV shader binary files"
+git push origin <branch-name>
+
+# Opción 2: Usando globbing (requiere: shopt -s globstar)
+shopt -s globstar
 git add system/**/*.spv
 git commit -m "Add SPV shader binary files"
 git push origin <branch-name>
@@ -70,6 +77,13 @@ git push origin <branch-name>
 
 #### Parte 2: Archivos de Configuración XML/CONF/TXT
 ```bash
+# Opción 1: Usando find (más portable)
+find system -path "*/etc/*" \( -name "*.xml" -o -name "*.conf" -o -name "*.txt" \) -type f -exec git add {} +
+git commit -m "Add system configuration files (Part 1/5)"
+git push origin <branch-name>
+
+# Opción 2: Usando globbing (requiere: shopt -s globstar)
+shopt -s globstar
 git add system/**/etc/**/*.xml
 git add system/**/etc/**/*.conf  
 git add system/**/etc/**/*.txt
@@ -79,20 +93,29 @@ git push origin <branch-name>
 
 #### Parte 3: Certificados
 ```bash
-git add system/**/etc/epdg/certificates/
+# Usando rutas específicas
+git add system/system/etc/epdg/certificates/ 2>/dev/null || git add system/etc/epdg/certificates/
 git commit -m "Add certificate files (Part 2/5)"
 git push origin <branch-name>
 ```
 
 #### Parte 4: Archivos Init y Servicios
 ```bash
-git add system/**/etc/init/
+# Usando rutas específicas
+git add system/system/etc/init/ 2>/dev/null || git add system/etc/init/
 git commit -m "Add init and service files (Part 3/5)"
 git push origin <branch-name>
 ```
 
 #### Parte 5: Configuración de Fuentes y Display
 ```bash
+# Opción 1: Usando find
+find system -path "*/etc/font*" -o -path "*/etc/display*" | xargs -r git add
+git commit -m "Add font and display configuration (Part 4/5)"
+git push origin <branch-name>
+
+# Opción 2: Usando globbing (requiere: shopt -s globstar)
+shopt -s globstar
 git add system/**/etc/font*
 git add system/**/etc/display*
 git commit -m "Add font and display configuration (Part 4/5)"
