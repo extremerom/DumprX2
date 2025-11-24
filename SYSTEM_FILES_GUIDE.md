@@ -110,7 +110,7 @@ git push origin <branch-name>
 #### Parte 5: Configuración de Fuentes y Display
 ```bash
 # Opción 1: Usando find
-find system -path "*/etc/font*" -o -path "*/etc/display*" | xargs -r git add
+find system \( -path "*/etc/font*" -o -path "*/etc/display*" \) -type f -exec git add {} +
 git commit -m "Add font and display configuration (Part 4/5)"
 git push origin <branch-name>
 
@@ -122,7 +122,7 @@ git commit -m "Add font and display configuration (Part 4/5)"
 git push origin <branch-name>
 ```
 
-#### Parte 6: Archivos Restantes
+#### Parte 5: Archivos Restantes
 ```bash
 git add system/
 git commit -m "Add remaining system files (Part 5/5)"
