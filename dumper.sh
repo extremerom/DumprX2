@@ -1118,7 +1118,6 @@ commit_and_push(){
 		"odm_dlkm"
 		"vendor_dlkm"
 		"vendor"
-		"system"
 	)
 
 	git lfs install
@@ -1142,6 +1141,51 @@ commit_and_push(){
 		git commit -sm "Add ${i} for ${description}"
 		git push -u origin "${branch}"
 	done
+
+	# Split system directory into three parts to avoid HTTP 500 errors with large files
+	if [ -d "system" ]; then
+		# Get all subdirectories in system (excluding nested system_* dirs already handled)
+		local SYSTEM_SUBDIRS=()
+		while IFS= read -r -d '' subdir; do
+			local dirname=$(basename "$subdir")
+			# Skip system_ext, system_dlkm as they're already handled above
+			if [[ ! "$dirname" =~ ^system_(ext|dlkm)$ ]]; then
+				SYSTEM_SUBDIRS+=("$dirname")
+			fi
+		done < <(find system -maxdepth 1 -type d -not -path "system" -print0 2>/dev/null | sort -z)
+		
+		# Calculate how many subdirs per part (divide into 3 parts)
+		local total=${#SYSTEM_SUBDIRS[@]}
+		local part_size=$(( (total + 2) / 3 ))  # Round up division
+		
+		# Push system subdirectories in three parts
+		for part in 1 2 3; do
+			local start_idx=$(( (part - 1) * part_size ))
+			local end_idx=$(( part * part_size ))
+			
+			# Add subdirectories for this part
+			local has_content=false
+			for (( idx=$start_idx; idx<$end_idx && idx<$total; idx++ )); do
+				local subdir="${SYSTEM_SUBDIRS[$idx]}"
+				if [ -d "system/$subdir" ]; then
+					git add "system/$subdir"
+					has_content=true
+				fi
+			done
+			
+			# Also handle root-level files in system for the first part
+			if [ $part -eq 1 ]; then
+				find system -maxdepth 1 -type f -exec git add {} \; 2>/dev/null
+				has_content=true
+			fi
+			
+			# Commit and push this part if there's content
+			if [ "$has_content" = true ]; then
+				git commit -sm "Add system part ${part}/3 for ${description}" || true
+				git push -u origin "${branch}"
+			fi
+		done
+	fi
 
 	git add .
 	git commit -sm "Add extras for ${description}"
