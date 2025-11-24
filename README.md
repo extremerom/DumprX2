@@ -64,6 +64,13 @@ Help Context:
   - If only Token is given but Organization is not, your Git Username will be used.
 - Copy your Telegram Token in a file named .tg_token and Telegram Chat/Channel ID in another file named .tg_chat file if you want to publish the uploading info in Telegram.
 
+### Handling Large System Files
+
+When dumping firmware, you may encounter errors when pushing large system directories to GitHub. See [SYSTEM_FILES_GUIDE.md](SYSTEM_FILES_GUIDE.md) for:
+- How to use Git LFS for large binary files (.spv, .so, .apk, etc.)
+- How to split system directory commits to avoid push errors
+- Using the `organize_system_files.sh` helper script
+
 ## Main Scripture Credit
 
 As mentioned above, this toolkit is entirely focused on improving the Original Firmware Dumper available:  [Dumpyara](https://github.com/AndroidDumps/) [Phoenix Firmware Dumper](https://github.com/DroidDumps)

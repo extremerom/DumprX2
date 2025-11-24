@@ -10,3 +10,7 @@ out/
 __pycache__
 utils/oppo_*
 utils/vmlinux*
+
+# System dumps - use the organize_system_files.sh script instead
+# of committing these directly to avoid git push errors
+system/
