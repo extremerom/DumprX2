@@ -100,7 +100,7 @@ jobs:
           ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
 
           # Setup Git to use SSH
-          git config --global core.sshCommand "ssh -i ~/.ssh/id_rsa -o UserKnownHostsForFile=~/.ssh/known_hosts"
+          git config --global core.sshCommand "ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts"
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GITLAB_SSH_KEY: ${{ secrets.GITLAB_SSH_KEY }}
@@ -131,19 +131,13 @@ jobs:
           if [[ "${{ inputs.platform }}" == "gitlab" ]]; then
             echo "${{ steps.extract_org.outputs.org_name }}" > .gitlab_group
 
-            # Setup PUSH_TO_GITLAB environment variable
-            export PUSH_TO_GITLAB=true
+            # Setup PUSH_TO_GITLAB environment variable to persist across steps
+            echo 'PUSH_TO_GITLAB=true' >> $GITHUB_ENV
           fi
 
       - name: Run dumper script
         run: |
           chmod +x dumper.sh
-
-          # Set PUSH_TO_GITLAB if platform is gitlab
-          if [[ "${{ inputs.platform }}" == "gitlab" ]]; then
-            export PUSH_TO_GITLAB=true
-          fi
-
           ./dumper.sh "${DUMP_URL}"
         env:
           DUMP_URL: ${{ inputs.dump_url }}
