@@ -7,13 +7,21 @@ on:
         description: 'URL del dump del firmware (debe estar entre comillas simples si contiene caracteres especiales)'
         required: true
         type: string
+      platform:
+        description: 'Plataforma de destino (GitHub o GitLab)'
+        required: true
+        type: choice
+        options:
+          - github
+          - gitlab
+        default: github
       repo_url:
-        description: 'URL del repositorio de destino (ej: https://github.com/usuario/repo)'
+        description: 'URL del repositorio de destino (ej: https://github.com/usuario/repo o https://gitlab.com/usuario/repo)'
         required: true
         type: string
       github_token:
-        description: 'Token de GitHub con permisos de escritura'
-        required: true
+        description: 'Token de GitHub con permisos de escritura (solo si se selecciona GitHub)'
+        required: false
 
 jobs:
   dump:
@@ -72,30 +80,70 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
       
       - name: Setup GitHub token
+        if: inputs.platform == 'github'
         run: |
           echo "${GITHUB_TOKEN}" > .github_token
         env:
           GITHUB_TOKEN: ${{ inputs.github_token }}
       
+      - name: Setup GitLab credentials
+        if: inputs.platform == 'gitlab'
+        run: |
+          echo "${GITLAB_TOKEN}" > .gitlab_token
+          
+          # Setup SSH key for GitLab
+          mkdir -p ~/.ssh
+          echo "${GITLAB_SSH_KEY}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Add GitLab to known hosts
+          ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+          
+          # Setup Git to use SSH
+          git config --global core.sshCommand "ssh -i ~/.ssh/id_rsa -o UserKnownHostsForFile=~/.ssh/known_hosts"
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_SSH_KEY: ${{ secrets.GITLAB_SSH_KEY }}
+      
       - name: Extract organization name from repo URL
         id: extract_org
         run: |
-          # Extract org/user name from URL
           REPO_URL="${{ inputs.repo_url }}"
-          # Remove protocol
-          REPO_PATH=$(echo "$REPO_URL" | sed 's|https://github.com/||' | sed 's|http://github.com/||' | sed 's|git@github.com:||' | sed 's|\.git$||')
+          PLATFORM="${{ inputs.platform }}"
+          
+          # Remove protocol and extract path
+          if [[ "$PLATFORM" == "github" ]]; then
+            REPO_PATH=$(echo "$REPO_URL" | sed 's|https://github.com/||' | sed 's|http://github.com/||' | sed 's|git@github.com:||' | sed 's|\.git$||')
+          elif [[ "$PLATFORM" == "gitlab" ]]; then
+            REPO_PATH=$(echo "$REPO_URL" | sed 's|https://gitlab.com/||' | sed 's|http://gitlab.com/||' | sed 's|git@gitlab.com:||' | sed 's|\.git$||')
+          fi
+          
           # Get organization/user name (first part before /)
           ORG_NAME=$(echo "$REPO_PATH" | cut -d'/' -f1)
           echo "org_name=$ORG_NAME" >> $GITHUB_OUTPUT
-          echo "Extracted organization name: $ORG_NAME"
+          echo "Extracted organization name: $ORG_NAME for platform: $PLATFORM"
       
-      - name: Setup GitHub organization name
+      - name: Setup organization name and platform
         run: |
           echo "${{ steps.extract_org.outputs.org_name }}" > .github_orgname
+          
+          # For GitLab, also setup group name
+          if [[ "${{ inputs.platform }}" == "gitlab" ]]; then
+            echo "${{ steps.extract_org.outputs.org_name }}" > .gitlab_group
+            
+            # Setup PUSH_TO_GITLAB environment variable
+            export PUSH_TO_GITLAB=true
+          fi
       
       - name: Run dumper script
         run: |
           chmod +x dumper.sh
+          
+          # Set PUSH_TO_GITLAB if platform is gitlab
+          if [[ "${{ inputs.platform }}" == "gitlab" ]]; then
+            export PUSH_TO_GITLAB=true
+          fi
+          
           ./dumper.sh "${DUMP_URL}"
         env:
           DUMP_URL: ${{ inputs.dump_url }}
